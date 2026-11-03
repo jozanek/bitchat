@@ -251,6 +251,37 @@ jobs:
           echo "Using iPhone simulator destination id: $destination_id"
           echo "id=$destination_id" >> "$GITHUB_OUTPUT"
 
+      # The first boot of a new simulator does one-time setup, which takes
+      # minutes on a CI runner. Cache the device folder after one boot, before
+      # any app is installed, so later runs do a quicker second boot. The key
+      # holds the runner image version, because each image has its own
+      # simulator runtime and device IDs.
+      - name: Set the simulator cache key
+        id: sim-key
+        run: echo "key=ios-sim-v1-${ImageOS}-${ImageVersion}-${{ steps.destination.outputs.id }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the booted simulator
+        id: sim-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/Library/Developer/CoreSimulator/Devices/${{ steps.destination.outputs.id }}
+          key: ${{ steps.sim-key.outputs.key }}
+
+      - name: Boot the simulator once
+        if: steps.sim-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 10
+        run: |
+          xcrun simctl bootstatus "${{ steps.destination.outputs.id }}" -b
+          xcrun simctl shutdown "${{ steps.destination.outputs.id }}"
+          du -sh ~/Library/Developer/CoreSimulator/Devices/${{ steps.destination.outputs.id }}
+
+      - name: Save the booted simulator
+        if: steps.sim-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/Library/Developer/CoreSimulator/Devices/${{ steps.destination.outputs.id }}
+          key: ${{ steps.sim-key.outputs.key }}
+
       # Coverage and the index store are off, because no step reads them. The
       # SwiftPM job already gates the benchmarks, so they are skipped here.
       - name: Run iOS tests
