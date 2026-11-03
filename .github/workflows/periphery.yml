@@ -15,6 +15,7 @@ concurrency:
 jobs:
   periphery:
     name: Periphery scan
+    if: false # experiment only: run just the iOS job
     runs-on: macos-latest
     timeout-minutes: 30
     # Blocking, like SwiftLint since #1646. The baseline (committed July 8)

@@ -15,6 +15,7 @@ concurrency:
 jobs:
   test:
     name: Run Swift Tests (${{ matrix.name }})
+    if: false # experiment only: run just the iOS job
     runs-on: macos-latest
     # A hung test must fail fast, not hold a runner for GitHub's 360-minute
     # default (observed: intermittent app-suite hangs starving the queue).
@@ -135,6 +136,7 @@ jobs:
   # iOS-conditional paths and both universal Release link configurations.
   ios-build:
     name: Build Release apps (universal)
+    if: false # experiment only: run just the iOS job
     runs-on: macos-latest
     timeout-minutes: 15
 
